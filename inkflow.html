@@ -1,0 +1,813 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Inkflow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a setup page (paragraph + pace), a full-screen pacer where one chunk of words lights up in the centre of a right-to-left track, and a results page. */
+:root {
+  --bg: #12100a;
+  --bg-glow: #5c5430;
+  --fg: #f6f1de;
+  --muted: #a8a184;
+  --accent: #f0cf68;
+  --accent-ink: #1a1606;
+  --glow: rgba(240, 207, 104, 0.55);
+  --surface: rgba(255, 248, 215, 0.06);
+  --surface-strong: rgba(255, 248, 215, 0.12);
+  --line: rgba(255, 248, 215, 0.16);
+  --good: #8fd19e;
+  --warn: #f0a35e;
+  --font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #eceee8;
+    --bg-glow: #d8d1a0;
+    --fg: #1c1a10;
+    --muted: #666352;
+    --accent: #7d5f00;
+    --accent-ink: #fffdf0;
+    --glow: rgba(125, 95, 0, 0.35);
+    --surface: rgba(255, 255, 255, 0.6);
+    --surface-strong: rgba(28, 26, 16, 0.08);
+    --line: rgba(28, 26, 16, 0.16);
+    --good: #2c7a47;
+    --warn: #ad4f14;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #eceee8;
+  --bg-glow: #d8d1a0;
+  --fg: #1c1a10;
+  --muted: #666352;
+  --accent: #7d5f00;
+  --accent-ink: #fffdf0;
+  --glow: rgba(125, 95, 0, 0.35);
+  --surface: rgba(255, 255, 255, 0.6);
+  --surface-strong: rgba(28, 26, 16, 0.08);
+  --line: rgba(28, 26, 16, 0.16);
+  --good: #2c7a47;
+  --warn: #ad4f14;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: radial-gradient(120% 60% at 50% 0%, var(--bg-glow), transparent 72%), var(--bg);
+  background-attachment: fixed;
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 40px;
+}
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---------- Setup ---------- */
+.wrap { max-width: 1040px; margin: 0 auto; min-width: 0; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 8px 4px; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 10px; }
+.brand i { display: inline-block; width: 26px; height: 3px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 12px var(--glow); }
+.ghost { background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; min-height: 40px; color: var(--muted); font-size: 0.875rem; }
+.ghost:hover { color: var(--fg); border-color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.1rem, 6.4vw, 3.9rem); line-height: 1.04; letter-spacing: -0.025em; margin: 28px 0 12px; text-wrap: balance; max-width: 16ch; }
+.lede { color: var(--muted); max-width: 56ch; margin: 0 0 22px; font-size: 1.05rem; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 26px; margin: 0 0 22px; padding: 0; list-style: none; }
+.stats li { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.stats b { font-family: var(--font-mono); font-weight: 500; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.stats span { color: var(--muted); font-size: 0.85rem; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; backdrop-filter: blur(6px); }
+.card h2, .card label.h { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; margin: 0; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.link { background: none; border: 0; color: var(--accent); padding: 6px 2px; text-decoration: underline; text-underline-offset: 3px; font-size: 0.9rem; }
+textarea { width: 100%; min-height: 240px; resize: vertical; background: transparent; border: 1px solid var(--line); border-radius: 10px; padding: 14px; font-size: 1.05rem; line-height: 1.6; }
+textarea::placeholder { color: var(--muted); }
+.meta { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 14px 0 16px; }
+.chip { border: 1px solid var(--line); background: transparent; border-radius: 10px; padding: 10px 6px; min-height: 56px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: 500; }
+.chip small { font-family: var(--font-mono); color: var(--muted); font-size: 0.78rem; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip[aria-pressed="true"] small { color: var(--accent-ink); }
+.slider-row { display: flex; align-items: center; gap: 14px; }
+input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); height: 32px; }
+.slider-row output { font-family: var(--font-mono); min-width: 7ch; text-align: right; font-variant-numeric: tabular-nums; }
+.note { color: var(--muted); font-size: 0.88rem; margin: 10px 0 0; }
+.opts { display: grid; gap: 4px; margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+.opt { display: flex; align-items: center; gap: 12px; min-height: 40px; cursor: pointer; font-size: 0.95rem; }
+.opt input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+.calib { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.calib p { margin: 0 0 10px; font-size: 0.92rem; color: var(--muted); }
+.calib .sentence { color: var(--fg); font-family: var(--font-display); font-size: 1.15rem; line-height: 1.35; padding: 12px 14px; border-radius: 10px; background: var(--surface-strong); }
+.btn { border-radius: 999px; border: 1px solid var(--line); background: var(--surface-strong); padding: 10px 18px; min-height: 44px; font-weight: 500; }
+.btn:hover { border-color: var(--muted); }
+.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; box-shadow: 0 6px 28px -8px var(--glow); }
+.primary:hover { filter: brightness(1.06); border-color: var(--accent); }
+.cta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 18px; }
+.cta .primary { font-size: 1.1rem; padding: 14px 34px; min-height: 54px; }
+.hint { margin: 0; color: var(--warn); font-size: 0.92rem; }
+.keys { color: var(--muted); font-size: 0.85rem; margin-top: 26px; }
+.keys kbd { font-family: var(--font-mono); font-size: 0.78rem; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+
+.plist-head { margin: 16px 0 0; color: var(--muted); font-size: 0.88rem; }
+.plist { list-style: none; margin: 8px 0 0; padding: 0; max-height: 230px; overflow-y: auto; }
+.plist li { display: grid; grid-template-columns: 2ch minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 6px 2px; border-top: 1px solid var(--line); font-size: 0.92rem; }
+.plist .pn { font-family: var(--font-mono); color: var(--accent); }
+.plist .pt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plist .pw { font-family: var(--font-mono); color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+.plist .link { font-size: 0.85rem; white-space: nowrap; }
+
+/* ---------- Session ---------- */
+.session {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; flex-direction: column;
+  background: radial-gradient(130% 70% at 50% 0%, var(--bg-glow), transparent 75%), var(--bg);
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.s-top { display: flex; align-items: center; gap: 14px; transition: opacity 0.4s; }
+.bar { flex: 1; height: 4px; border-radius: 4px; background: var(--surface-strong); overflow: hidden; min-width: 0; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 4px; box-shadow: 0 0 10px var(--glow); }
+.s-meta { display: flex; gap: 12px; color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+.stage { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 22px; min-height: 0; position: relative; }
+.viewport {
+  position: relative; height: clamp(8rem, 30vh, 15rem); overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%, #000 84%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 16%, #000 84%, transparent 100%);
+}
+.track {
+  position: absolute; left: 50%; top: 50%; display: flex; align-items: center; white-space: nowrap;
+  font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em;
+  font-size: clamp(2.4rem, 8vw, 5.6rem); line-height: 1.2;
+  transform: translate3d(0, -50%, 0); will-change: transform;
+}
+.chunk { position: relative; padding: 0 0.32em; opacity: 0.28; transition: opacity 0.45s ease; }
+.chunk.past { opacity: 0.2; }
+.chunk.later { opacity: 0.26; }
+.chunk.near { opacity: 0.38; }
+.chunk.next { opacity: 0.62; }
+.chunk.end { margin-right: 0.7em; }
+.chunk.cur { opacity: 1; transition: none; text-shadow: 0 0 0.45em var(--glow); }
+.chunk.cur::after {
+  content: ''; position: absolute; left: 0.32em; right: 0.32em; bottom: -0.04em; height: 0.07em; border-radius: 99px;
+  background: var(--accent); transform-origin: left center; transform: scaleX(calc(1 - var(--p, 0)));
+}
+.cue { text-align: center; color: var(--muted); margin: 0; font-size: 0.95rem; }
+.controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; max-width: 640px; width: 100%; margin: 0 auto; transition: opacity 0.5s; }
+.ctl { min-height: 64px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-strong); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-weight: 600; padding: 6px; }
+.ctl small { font-weight: 400; color: var(--muted); font-size: 0.75rem; font-family: var(--font-mono); }
+.ctl:hover { border-color: var(--muted); }
+.ctl.main { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.ctl.main small { color: var(--accent-ink); }
+.pace-now { text-align: center; font-family: var(--font-mono); color: var(--muted); font-size: 0.85rem; margin: 0 0 10px; }
+.session.idle .controls, .session.idle .s-top { opacity: 0.22; }
+.overlay { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(8px); padding: 20px; }
+.overlay .big { font-family: var(--font-display); font-weight: 700; font-size: clamp(3rem, 14vw, 7rem); line-height: 1; text-shadow: 0 0 0.4em var(--glow); }
+.overlay p { margin: 0; color: var(--muted); max-width: 36ch; }
+
+/* ---------- Results ---------- */
+.results h1 { max-width: none; }
+.compare { display: flex; flex-wrap: wrap; gap: 14px 40px; margin: 6px 0 4px; }
+.compare div { min-width: 0; }
+.compare b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: clamp(2rem, 7vw, 3.2rem); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.compare span { color: var(--muted); font-size: 0.9rem; }
+.delta { margin: 4px 0 22px; color: var(--muted); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 0 0 22px; }
+.fact { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.fact b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.fact span { color: var(--muted); font-size: 0.85rem; }
+.fact.alert b { color: var(--warn); }
+.check h2 { font-family: var(--font-display); font-size: 1.2rem; margin: 0 0 4px; }
+.check p { margin: 0 0 12px; color: var(--muted); }
+.check .row { display: flex; flex-wrap: wrap; gap: 10px; }
+.check .row .btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.after { margin-top: 12px; color: var(--good); font-weight: 500; min-height: 1.5em; }
+
+@media (max-width: 760px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  textarea { min-height: 200px; }
+  .ctl { min-height: 70px; }
+  .cta .primary { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chunk { transition: none; }
+  .controls, .s-top { transition: none; }
+}
+</style>
+
+<div class="wrap" id="setup">
+  <header class="top">
+    <div class="brand"><i></i>Inkflow</div>
+    <button class="ghost" id="themeBtn" type="button">Theme: auto</button>
+  </header>
+  <h1>Write each word as it lights up.</h1>
+  <p class="lede">Paste a paragraph, pick a pace, and write it by hand on your notebook. Inkflow glides the text across the screen and lights the word to write now. Keep your pen moving until the light fades.</p>
+
+  <ul class="stats" id="stats" aria-label="Your progress"></ul>
+
+  <div class="grid">
+    <section class="card">
+      <div class="card-head">
+        <label class="h" for="text">Your paragraph</label>
+        <button class="link" id="sampleBtn" type="button">Load sample</button>
+      </div>
+      <textarea id="text" placeholder="Paste your text here. Leave a blank line between paragraphs and Inkflow will run them one after another."></textarea>
+      <p class="meta" id="meta"></p>
+      <div id="plistWrap" hidden>
+        <p class="plist-head">Paragraphs found. Check the split, or start from any one.</p>
+        <ol class="plist" id="plist"></ol>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Pace</h2>
+      <div class="chips" role="group" aria-label="Pace presets">
+        <button class="chip" type="button" data-k="comfort" aria-pressed="false">Comfort <small></small></button>
+        <button class="chip" type="button" data-k="normal" aria-pressed="false">Normal <small></small></button>
+        <button class="chip" type="button" data-k="challenge" aria-pressed="false">Challenge <small></small></button>
+      </div>
+      <div class="slider-row">
+        <input type="range" id="pace" min="6" max="50" step="1" value="18" aria-label="Words per minute">
+        <output id="paceOut" for="pace">18 wpm</output>
+      </div>
+      <p class="note" id="paceNote">Handwriting is slower than typing. Most people land between 12 and 25 wpm.</p>
+      <button class="link" id="calibBtn" type="button">Find my pace (30 second test)</button>
+
+      <div class="calib" id="calib" hidden>
+        <p id="calibMsg">Write this sentence on your page at your normal speed. Tap start first, then tap done when you finish.</p>
+        <div class="sentence" id="calibSentence" hidden>The quiet pen moves across the page, one steady word at a time.</div>
+        <div class="cta" style="margin-top:12px">
+          <button class="btn" id="calibGo" type="button">Start</button>
+        </div>
+      </div>
+
+      <div class="opts">
+        <label class="opt"><input type="checkbox" id="optFs" checked> Go fullscreen when I start</label>
+        <label class="opt"><input type="checkbox" id="optSound"> Soft tick on every new word</label>
+        <label class="opt"><input type="checkbox" id="optLeft"> Show time left while writing</label>
+        <label class="opt"><input type="checkbox" id="optNl"> Every new line is its own paragraph</label>
+      </div>
+    </section>
+  </div>
+
+  <div class="cta">
+    <button class="btn primary" id="startBtn" type="button">Start writing</button>
+    <p class="hint" id="startMsg" role="status"></p>
+  </div>
+  <p class="keys">During a session: <kbd>Space</kbd> pause, <kbd>←</kbd> back two, <kbd>↓</kbd> slower, <kbd>↑</kbd> faster, <kbd>Esc</kbd> end.</p>
+</div>
+
+<section class="session" id="session" hidden aria-label="Writing session">
+  <div class="s-top" id="sTop">
+    <button class="ghost" id="endBtn" type="button">End</button>
+    <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+    <div class="s-meta"><span class="mono" id="paraTxt" hidden></span><span class="mono" id="leftTxt" hidden></span><span class="mono" id="countTxt"></span></div>
+  </div>
+  <div class="stage">
+    <div class="viewport" id="viewport" aria-live="off"><div class="track" id="track"></div></div>
+    <p class="cue">Write the bright word on your page.</p>
+    <div class="overlay" id="overlay" hidden>
+      <div class="big" id="ovBig"></div>
+      <p id="ovMsg"></p>
+      <button class="btn primary" id="resumeBtn" type="button" hidden>Resume</button>
+      <button class="btn primary" id="nextBtn" type="button" hidden>Start next paragraph</button>
+      <button class="btn" id="holdBtn" type="button" hidden>I need a longer break</button>
+    </div>
+  </div>
+  <div>
+    <p class="pace-now" id="paceNow"></p>
+    <div class="controls" id="controls">
+      <button class="ctl" id="backBtn" type="button" aria-label="Go back two words">Back<small>2 words</small></button>
+      <button class="ctl" id="slowBtn" type="button" aria-label="Slow down">Slower<small>-2 wpm</small></button>
+      <button class="ctl main" id="pauseBtn" type="button">Pause<small>space</small></button>
+      <button class="ctl" id="fastBtn" type="button" aria-label="Speed up">Faster<small>+2 wpm</small></button>
+    </div>
+  </div>
+</section>
+
+<div class="wrap results" id="results" hidden>
+  <header class="top">
+    <div class="brand"><i></i>Inkflow</div>
+  </header>
+  <h1 id="resTitle">Paragraph complete.</h1>
+  <div class="compare">
+    <div><b id="resPlan">0:00</b><span>planned time</span></div>
+    <div><b id="resActual">0:00</b><span>actual writing time</span></div>
+  </div>
+  <p class="delta" id="resDelta"></p>
+  <p class="delta" id="resParas"></p>
+  <div class="facts" id="facts"></div>
+  <section class="card check">
+    <h2>How did that feel?</h2>
+    <p>Inkflow cannot see your page, so your answer sets the pace for next time.</p>
+    <div class="row" role="group" aria-label="Self check">
+      <button class="btn" type="button" data-v="kept" aria-pressed="false">I kept up</button>
+      <button class="btn" type="button" data-v="mostly" aria-pressed="false">Mostly</button>
+      <button class="btn" type="button" data-v="struggled" aria-pressed="false">I struggled</button>
+    </div>
+    <div class="after" id="after" role="status"></div>
+  </section>
+  <div class="cta">
+    <button class="btn primary" id="againBtn" type="button">Write it again</button>
+    <button class="btn" id="newBtn" type="button">New paragraph</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var KEY = 'inkflow-v1';
+  var SAMPLE = 'Good habits are built in small, quiet moments. When you write by hand, each word has to pass through your mind before it reaches the page, and that slowness is a gift.\n\nKeep your pen moving, keep your eyes soft, and let the next word arrive when it is ready. Speed comes later. Rhythm comes first, and rhythm is something you can practise every day.\n\nWhen the last line is finished, take a breath. Read what you wrote, notice the words that slowed you down, and start the next paragraph with a steady hand.';
+  var CALIB_WORDS = 13;
+
+  /* ---------- storage (per-viewer convenience only) ---------- */
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+  var store = load();
+  store.days = store.days || [];
+  store.sessions = store.sessions || 0;
+
+  /* ---------- theme ---------- */
+  var themes = ['auto', 'dark', 'light'];
+  function applyTheme() {
+    var t = store.theme || 'auto';
+    if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    $('themeBtn').textContent = 'Theme: ' + t;
+  }
+  $('themeBtn').addEventListener('click', function () {
+    var i = themes.indexOf(store.theme || 'auto');
+    store.theme = themes[(i + 1) % 3];
+    persist(); applyTheme();
+  });
+
+  /* ---------- chunking and timing ---------- */
+  function lettersOf(w) { return w.replace(/[^\p{L}\p{N}]/gu, '').length; }
+  function punctExtra(w) {
+    if (/[.!?…]["'”’)]*$/.test(w)) return 2;
+    if (/[,;:—-]["'”’)]*$/.test(w)) return 1;
+    return 0;
+  }
+  function buildChunks(text) {
+    var words = text.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+    var out = [], i = 0;
+    while (i < words.length) {
+      var w = words[i], l = lettersOf(w), n = words[i + 1];
+      if (n !== undefined && l <= 3 && punctExtra(w) < 2 && l + lettersOf(n) <= 9) {
+        var l2 = lettersOf(n);
+        out.push({ text: w + ' ' + n, words: 2, weight: 2 + l + l2 + 1 + punctExtra(n), end: punctExtra(n) === 2 });
+        i += 2;
+      } else {
+        out.push({ text: w, words: 1, weight: 2 + l + punctExtra(w), end: punctExtra(w) === 2 });
+        i += 1;
+      }
+    }
+    return { words: words.length, chunks: out };
+  }
+  function unit(wpm) { return 60 / (wpm * 7); }
+  function totalWeight(chunks) { var s = 0; for (var i = 0; i < chunks.length; i++) s += chunks[i].weight; return s; }
+  function fmt(sec) {
+    sec = Math.max(0, Math.round(sec));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  /* ---------- paragraph detection ---------- */
+  function splitParagraphs(raw, everyLine) {
+    var norm = raw.replace(/\r\n?/g, '\n');
+    var parts = everyLine ? norm.split(/\n+/) : norm.split(/\n\s*\n/);
+    parts = parts.map(function (p) { return p.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+    var out = [], carry = '';
+    parts.forEach(function (p) {
+      var t = carry ? carry + ' ' + p : p;
+      if (t.split(' ').length < 4) carry = t; else { out.push(t); carry = ''; }
+    });
+    if (carry) { if (out.length) out[out.length - 1] += ' ' + carry; else out.push(carry); }
+    return out;
+  }
+  function getParas() {
+    return splitParagraphs(text.value, $('optNl').checked).map(function (raw) { var b = buildChunks(raw); b.raw = raw; return b; });
+  }
+  function renderPlist(ps) {
+    var wrap = $('plistWrap'), ol = $('plist');
+    ol.innerHTML = '';
+    if (ps.length < 2) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    ps.forEach(function (p, i) {
+      var li = document.createElement('li');
+      var n = document.createElement('span'); n.className = 'pn'; n.textContent = String(i + 1);
+      var t = document.createElement('span'); t.className = 'pt'; t.textContent = p.raw;
+      var w = document.createElement('span'); w.className = 'pw'; w.textContent = p.words + ' w';
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'link'; b.dataset.from = String(i); b.textContent = 'Start here';
+      li.appendChild(n); li.appendChild(t); li.appendChild(w); li.appendChild(b);
+      ol.appendChild(li);
+    });
+  }
+
+  /* ---------- setup screen ---------- */
+  var text = $('text'), pace = $('pace');
+  function base() { return store.base || 18; }
+  function presets() { var b = base(); return { comfort: Math.max(6, Math.round(b * 0.75)), normal: b, challenge: Math.min(50, Math.round(b * 1.3)) }; }
+  function streak() {
+    var set = {}, i;
+    for (i = 0; i < store.days.length; i++) set[store.days[i]] = 1;
+    function ds(d) { return d.toLocaleDateString('en-CA'); }
+    var d = new Date();
+    if (!set[ds(d)]) d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+    var n = 0;
+    while (set[ds(d)]) { n++; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1); }
+    return n;
+  }
+  function renderStats() {
+    var s = streak();
+    var items = [
+      [s, s === 1 ? 'day streak' : 'day streak'],
+      [store.sessions, store.sessions === 1 ? 'session' : 'sessions'],
+      [store.best ? store.best : '-', 'best pace (wpm)']
+    ];
+    $('stats').innerHTML = items.map(function (it) { return '<li><b>' + it[0] + '</b><span>' + it[1] + '</span></li>'; }).join('');
+  }
+  function refreshMeta() {
+    var ps = getParas(), w = 0, tw = 0, i;
+    for (i = 0; i < ps.length; i++) { w += ps[i].words; tw += totalWeight(ps[i].chunks); }
+    var wpm = +pace.value;
+    $('paceOut').textContent = wpm + ' wpm';
+    if (w) $('meta').textContent = (ps.length > 1 ? ps.length + ' paragraphs, ' : '') + w + ' words, about ' + fmt(tw * unit(wpm)) + ' at ' + wpm + ' wpm';
+    else $('meta').textContent = 'No text yet.';
+    renderPlist(ps);
+    var p = presets();
+    document.querySelectorAll('.chip').forEach(function (c) {
+      c.querySelector('small').textContent = p[c.dataset.k] + ' wpm';
+      c.setAttribute('aria-pressed', String(p[c.dataset.k] === wpm));
+    });
+    try { store.text = text.value; persist(); } catch (e) {}
+  }
+  function initSetup() {
+    text.value = store.text || SAMPLE;
+    pace.value = store.pace || base();
+    renderStats();
+    refreshMeta();
+  }
+  text.addEventListener('input', refreshMeta);
+  $('optNl').addEventListener('change', refreshMeta);
+  $('plist').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('button[data-from]') : null;
+    if (b) startSession(+b.dataset.from);
+  });
+  pace.addEventListener('input', function () { store.pace = +pace.value; refreshMeta(); });
+  document.querySelectorAll('.chip').forEach(function (c) {
+    c.addEventListener('click', function () { pace.value = presets()[c.dataset.k]; store.pace = +pace.value; refreshMeta(); });
+  });
+  $('sampleBtn').addEventListener('click', function () { text.value = SAMPLE; refreshMeta(); });
+
+  /* calibration */
+  var calibT0 = 0, calibRunning = false;
+  $('calibBtn').addEventListener('click', function () {
+    $('calib').hidden = !$('calib').hidden;
+  });
+  $('calibGo').addEventListener('click', function () {
+    if (!calibRunning) {
+      calibRunning = true; calibT0 = performance.now();
+      $('calibSentence').hidden = false;
+      $('calibMsg').textContent = 'Write the sentence now. Tap done as soon as you finish.';
+      $('calibGo').textContent = 'Done';
+    } else {
+      calibRunning = false;
+      var secs = (performance.now() - calibT0) / 1000;
+      var measured = CALIB_WORDS / (secs / 60);
+      var b = Math.min(40, Math.max(8, Math.round(measured * 0.85)));
+      store.base = b; store.pace = b; persist();
+      pace.value = b;
+      $('calibSentence').hidden = true;
+      $('calibMsg').textContent = 'You wrote about ' + Math.round(measured) + ' wpm. Normal pace is now ' + b + ' wpm, a little under your top speed so reading the screen stays easy.';
+      $('calibGo').textContent = 'Test again';
+      refreshMeta();
+    }
+  });
+
+  /* ---------- session state ---------- */
+  var chunks = [], idx = 0, elapsed = 0, wpm = 18, startWpm = 18, centers = [], cumW = [], totW = 0;
+  var paras = [], pIdx = 0, paraOffset = 0, paraCount = 1, docTotW = 1, docDoneW = 0, docWords = 0, plannedTotal = 0, perPara = [], paraA0 = 0, nextTimer = 0, breakLeft = 0;
+  var phase = 'idle', running = false, last = 0, raf = 0, cdTimer = 0, idleTimer = 0, endArmed = false, endTimer = 0;
+  var stats = {}, wl = null, ac = null, wordTotal = 0;
+  var track = $('track'), viewport = $('viewport');
+
+  function resetStats() { stats = { active: 0, slow: 0, fast: 0, pauses: 0, rewinds: 0, leaves: 0 }; }
+
+  function buildTrack() {
+    track.innerHTML = '';
+    var frag = document.createDocumentFragment();
+    chunks.forEach(function (c) {
+      var s = document.createElement('span');
+      s.className = 'chunk later' + (c.end ? ' end' : '');
+      s.textContent = c.text;
+      frag.appendChild(s);
+    });
+    track.appendChild(frag);
+    cumW = []; var acc = 0;
+    chunks.forEach(function (c) { cumW.push(acc); acc += c.weight; });
+    totW = acc;
+  }
+  function measure() {
+    var kids = track.children;
+    centers = [];
+    for (var i = 0; i < kids.length; i++) centers.push(kids[i].offsetLeft + kids[i].offsetWidth / 2);
+  }
+  function setClasses() {
+    var kids = track.children, lo = Math.max(0, idx - 6), hi = Math.min(kids.length - 1, idx + 8);
+    for (var i = lo; i <= hi; i++) {
+      var k = kids[i];
+      k.style.opacity = '';
+      var rel = i < idx ? 'past' : i === idx ? 'cur' : i === idx + 1 ? 'next' : i <= idx + 3 ? 'near' : 'later';
+      k.className = 'chunk ' + rel + (chunks[i].end ? ' end' : '');
+    }
+  }
+  function dur(i) { return chunks[i].weight * unit(wpm); }
+  function smooth(t) { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); }
+
+  function render() {
+    if (idx >= chunks.length || !centers.length) return;
+    var p = Math.min(1, elapsed / dur(idx));
+    var c0 = centers[idx], c1 = idx + 1 < centers.length ? centers[idx + 1] : c0;
+    var t = reduce ? 0 : smooth((p - 0.55) / 0.45);
+    var x = c0 + (c1 - c0) * t;
+    track.style.transform = 'translate3d(' + (-x) + 'px,-50%,0)';
+    var cur = track.children[idx];
+    if (cur) { cur.style.opacity = String(1 - 0.58 * p); cur.style.setProperty('--p', p.toFixed(3)); }
+    var done = cumW[idx] + p * chunks[idx].weight;
+    $('barFill').style.width = ((docDoneW + done) / docTotW * 100).toFixed(2) + '%';
+    var wordsDone = 0;
+    for (var i = 0; i < idx; i++) wordsDone += chunks[i].words;
+    $('countTxt').textContent = wordsDone + '/' + wordTotal;
+    $('leftTxt').textContent = fmt((docTotW - docDoneW - done) * unit(wpm)) + ' left';
+  }
+
+  function tick() {
+    if (!ac || !$('optSound').checked) return;
+    try {
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine'; o.frequency.value = 760;
+      g.gain.setValueAtTime(0.0001, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.05, ac.currentTime + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.07);
+      o.connect(g); g.connect(ac.destination);
+      o.start(); o.stop(ac.currentTime + 0.08);
+    } catch (e) {}
+  }
+
+  function frame(ts) {
+    if (!running) return;
+    var dt = Math.min(0.1, (ts - last) / 1000);
+    last = ts;
+    elapsed += dt; stats.active += dt;
+    var moved = false;
+    while (idx < chunks.length && elapsed >= dur(idx)) { elapsed -= dur(idx); idx++; moved = true; }
+    if (idx >= chunks.length) { paraDone(); return; }
+    if (moved) { setClasses(); tick(); }
+    render();
+    raf = requestAnimationFrame(frame);
+  }
+
+  function showOverlay(big, msg, withResume) {
+    $('ovBig').textContent = big; $('ovMsg').textContent = msg; $('resumeBtn').hidden = !withResume;
+    $('nextBtn').hidden = true; $('holdBtn').hidden = true;
+    $('overlay').hidden = false;
+    if (withResume) $('resumeBtn').focus();
+  }
+  function hideOverlay() { $('overlay').hidden = true; }
+
+  function run() {
+    phase = 'run'; running = true; last = performance.now();
+    $('pauseBtn').firstChild.nodeValue = 'Pause';
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
+    wake();
+  }
+  function pause(why, byUser) {
+    if (phase !== 'run') return;
+    running = false; cancelAnimationFrame(raf); phase = 'paused';
+    if (byUser) stats.pauses++;
+    $('pauseBtn').firstChild.nodeValue = 'Resume';
+    showOverlay('Paused', why || 'Your place is saved. Resume when your pen is ready.', true);
+    wakeIdle(true);
+  }
+  function resume() {
+    if (phase !== 'paused') return;
+    hideOverlay(); run(); wakeIdle();
+  }
+  function togglePause() { if (phase === 'run') pause(null, true); else if (phase === 'paused') resume(); else if (phase === 'between') advanceNow(); }
+  function slower() {
+    if (phase !== 'run' && phase !== 'paused') return;
+    wpm = Math.max(5, wpm - 2); stats.slow++; $('paceNow').textContent = 'Pace ' + wpm + ' wpm'; render();
+  }
+  function faster() {
+    if (phase !== 'run' && phase !== 'paused') return;
+    wpm = Math.min(60, wpm + 2); stats.fast++; $('paceNow').textContent = 'Pace ' + wpm + ' wpm'; render();
+  }
+  function back() {
+    if (phase !== 'run' && phase !== 'paused') return;
+    idx = Math.max(0, idx - 2); elapsed = 0; stats.rewinds++; setClasses(); render();
+  }
+  $('pauseBtn').addEventListener('click', togglePause);
+  $('resumeBtn').addEventListener('click', resume);
+  $('nextBtn').addEventListener('click', function () { advanceNow(); });
+  $('holdBtn').addEventListener('click', function () { holdBreak(); });
+  $('slowBtn').addEventListener('click', slower);
+  $('fastBtn').addEventListener('click', faster);
+  $('backBtn').addEventListener('click', back);
+  $('endBtn').addEventListener('click', function () {
+    if (endArmed) { cleanup(); showSetup(); return; }
+    endArmed = true; $('endBtn').textContent = 'Tap again to end';
+    clearTimeout(endTimer);
+    endTimer = setTimeout(function () { endArmed = false; $('endBtn').textContent = 'End'; }, 3000);
+  });
+
+  function wake() {
+    try {
+      if (navigator.wakeLock && !wl) navigator.wakeLock.request('screen').then(function (l) { wl = l; l.addEventListener('release', function () { wl = null; }); }).catch(function () {});
+    } catch (e) {}
+  }
+  function unwake() { try { if (wl) wl.release(); } catch (e) {} wl = null; }
+
+  function wakeIdle(keep) {
+    var s = $('session');
+    s.classList.remove('idle');
+    clearTimeout(idleTimer);
+    if (!keep) idleTimer = setTimeout(function () { if (phase === 'run') s.classList.add('idle'); }, 2800);
+  }
+  ['pointermove', 'pointerdown', 'touchstart', 'keydown'].forEach(function (ev) {
+    document.addEventListener(ev, function () { if (!$('session').hidden) wakeIdle(phase !== 'run'); }, { passive: true });
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if ($('session').hidden) return;
+    if (document.hidden) {
+      if (phase === 'run') { stats.leaves++; pause('You left the app, so Inkflow paused. Come back when you are ready.', false); }
+      else if (phase === 'between') { holdBreak(); }
+      else if (phase === 'count') { clearTimeout(cdTimer); cleanup(); showSetup(); }
+    } else if (phase === 'run' || phase === 'paused') { wake(); }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if ($('session').hidden) return;
+    if (e.code === 'Space') { e.preventDefault(); togglePause(); }
+    else if (e.key === 'ArrowLeft') back();
+    else if (e.key === 'ArrowDown') { e.preventDefault(); slower(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); faster(); }
+    else if (e.key === 'Escape') $('endBtn').click();
+  });
+  window.addEventListener('resize', function () { if (!$('session').hidden) { measure(); render(); } });
+
+  function countdown(n, first) {
+    if (n === 0) { hideOverlay(); run(); wakeIdle(); return; }
+    var msg = first && n === 3 ? (paraCount > 1 ? 'Paragraph ' + (paraOffset + pIdx + 1) + ' of ' + paraCount + '. ' : '') + 'Pen on paper. Start writing when the first word glows.' : '';
+    showOverlay(String(n), msg, false);
+    cdTimer = setTimeout(function () { countdown(n - 1, first); }, first ? 900 : 650);
+  }
+
+  function loadPara(k) {
+    pIdx = k; chunks = paras[k].chunks; wordTotal = paras[k].words; idx = 0; elapsed = 0;
+    buildTrack(); setClasses();
+    plannedTotal += totW * unit(wpm); paraA0 = stats.active;
+    $('paraTxt').hidden = paraCount < 2;
+    $('paraTxt').textContent = 'P' + (paraOffset + k + 1) + '/' + paraCount;
+  }
+  function paraDone() {
+    running = false; cancelAnimationFrame(raf);
+    perPara.push(stats.active - paraA0);
+    docDoneW += totW;
+    if (pIdx + 1 >= paras.length) { finish(); return; }
+    phase = 'between'; breakLeft = 8;
+    showOverlay('Paragraph ' + (paraOffset + pIdx + 1) + ' done', breakMsg(), false);
+    $('nextBtn').hidden = false; $('holdBtn').hidden = false;
+    wakeIdle(true);
+    clearInterval(nextTimer);
+    nextTimer = setInterval(function () {
+      breakLeft--;
+      if (breakLeft <= 0) advanceNow(); else $('ovMsg').textContent = breakMsg();
+    }, 1000);
+  }
+  function breakMsg() { return 'Finish your last word and breathe. The next paragraph starts in ' + breakLeft + 's.'; }
+  function holdBreak() {
+    if (phase !== 'between') return;
+    clearInterval(nextTimer);
+    $('ovMsg').textContent = 'Take your time. Start the next paragraph when you are ready.';
+    $('holdBtn').hidden = true;
+  }
+  function advanceNow() {
+    if (phase !== 'between') return;
+    clearInterval(nextTimer);
+    loadPara(pIdx + 1); phase = 'count';
+    requestAnimationFrame(function () { measure(); render(); countdown(2, false); });
+  }
+
+  function showSetup() {
+    $('session').hidden = true; $('results').hidden = true; $('setup').hidden = false;
+    document.body.style.overflow = '';
+    endArmed = false; $('endBtn').textContent = 'End';
+    initSetup(); window.scrollTo(0, 0);
+  }
+
+  function cleanup() {
+    running = false; cancelAnimationFrame(raf); clearTimeout(cdTimer); clearTimeout(idleTimer); clearTimeout(endTimer); clearInterval(nextTimer);
+    phase = 'idle'; unwake(); $('session').classList.remove('idle');
+    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {}); } catch (e) {}
+  }
+
+  $('startBtn').addEventListener('click', function () { startSession(0); });
+  function startSession(from) {
+    var all = getParas(), ps = all.slice(from), w = 0, tw = 0, i;
+    for (i = 0; i < ps.length; i++) { w += ps[i].words; tw += totalWeight(ps[i].chunks); }
+    if (w < 3) { $('startMsg').textContent = 'Paste at least a few words to write.'; return; }
+    $('startMsg').textContent = '';
+    paras = ps; paraOffset = from; paraCount = all.length; pIdx = 0;
+    docTotW = tw; docDoneW = 0; docWords = w; plannedTotal = 0; perPara = [];
+    idx = 0; elapsed = 0;
+    wpm = +pace.value; startWpm = wpm; resetStats();
+    store.pace = wpm; persist();
+    if ($('optSound').checked && !ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } }
+    if (ac && ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
+    if ($('optFs').checked) { try { var p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
+    $('setup').hidden = true; $('results').hidden = true; $('session').hidden = false;
+    document.body.style.overflow = 'hidden';
+    $('leftTxt').hidden = !$('optLeft').checked;
+    $('paceNow').textContent = 'Pace ' + wpm + ' wpm';
+    loadPara(0);
+    phase = 'count';
+    requestAnimationFrame(function () {
+      measure(); render();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measure(); render(); });
+      countdown(3, true);
+    });
+  }
+
+  /* ---------- results ---------- */
+  var lastAvg = 0;
+  function finish() {
+    var planned = plannedTotal, active = stats.active;
+    var avg = docWords / (active / 60); lastAvg = avg;
+    cleanup();
+    $('session').hidden = true; $('setup').hidden = true; $('results').hidden = false;
+    document.body.style.overflow = '';
+    $('resPlan').textContent = fmt(planned);
+    $('resActual').textContent = fmt(active);
+    $('resParas').textContent = perPara.length > 1 ? 'Time per paragraph: ' + perPara.map(function (s, i) { return (paraOffset + i + 1) + ' (' + fmt(s) + ')'; }).join(', ') : '';
+    var diff = Math.round(active - planned);
+    $('resDelta').textContent = Math.abs(diff) < 3 ? 'Right on the planned time.' : diff > 0 ? 'About ' + fmt(diff) + ' longer than planned, because you slowed the pace.' : 'About ' + fmt(-diff) + ' faster than planned, because you sped the pace up.';
+    var facts = [
+      [docWords, 'words written'],
+      [paras.length, paras.length === 1 ? 'paragraph' : 'paragraphs'],
+      [Math.round(avg), 'average wpm'],
+      [stats.slow, 'slow-downs'],
+      [stats.pauses, 'pauses'],
+      [stats.rewinds, 'times you went back'],
+      [stats.leaves, 'times you left the app', stats.leaves > 0]
+    ];
+    $('facts').innerHTML = facts.map(function (f) { return '<div class="fact' + (f[2] ? ' alert' : '') + '"><b>' + f[0] + '</b><span>' + f[1] + '</span></div>'; }).join('');
+    var many = paras.length > 1;
+    $('resTitle').textContent = (many ? 'All paragraphs complete.' : 'Paragraph complete.') + (stats.leaves === 0 ? ' No distractions.' : '');
+    document.querySelectorAll('.check .btn').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); b.disabled = false; });
+    $('after').textContent = '';
+    var today = new Date().toLocaleDateString('en-CA');
+    if (store.days.indexOf(today) < 0) store.days.push(today);
+    store.days = store.days.slice(-400);
+    store.sessions++;
+    persist();
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('.check .btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var v = b.dataset.v, basePace = Math.round(lastAvg), next;
+      if (v === 'kept') { next = basePace + 2; if (!store.best || basePace > store.best) store.best = basePace; }
+      else if (v === 'mostly') next = basePace;
+      else next = basePace - 3;
+      next = Math.min(50, Math.max(6, next));
+      store.pace = next; persist();
+      document.querySelectorAll('.check .btn').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); x.disabled = true; });
+      $('after').textContent = (v === 'kept' ? 'Nice. ' : v === 'mostly' ? 'Good effort. ' : 'That is fine. ') + 'Your next session starts at ' + next + ' wpm.';
+    });
+  });
+  $('againBtn').addEventListener('click', function () { showSetup(); $('startBtn').click(); });
+  $('newBtn').addEventListener('click', function () { text.value = ''; store.text = ''; showSetup(); text.value = ''; refreshMeta(); text.focus(); });
+
+  applyTheme();
+  initSetup();
+})();
+</script>
+
+</body></html>
